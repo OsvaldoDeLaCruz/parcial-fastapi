@@ -7,16 +7,10 @@ Aquí se crean tres piezas que usa el resto de la aplicación:
 - Base: clase de la que heredan todos los modelos de models.py.
 """
 
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# Carga las variables del archivo .env (si existe) en os.environ
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+from app.config import DATABASE_URL
 
 # SQLite por defecto solo permite usar una conexión en el hilo que la creó.
 # FastAPI atiende peticiones en varios hilos, por eso se desactiva esa restricción.
