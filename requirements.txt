@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+gunicorn
+sqlalchemy
+pydantic[email]
+pyotp
+bcrypt
+python-jose[cryptography]
+python-dotenv
+slowapi
+pytest
+httpx
