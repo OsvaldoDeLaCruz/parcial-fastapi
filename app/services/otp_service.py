@@ -90,6 +90,26 @@ def verify_otp(db: Session, user: User, code: str) -> bool:
     return False
 
 
+def has_pending_login(db: Session, user: User) -> bool:
+    """
+    Indica si el usuario tiene un inicio de sesión en curso.
+
+    Es decir, si se le generó un OTP en los últimos OTP_EXPIRE_MINUTES
+    (eso solo ocurre después de un login con contraseña correcta).
+    Se usa en /auth/resend-otp para que nadie pueda pedir códigos para un
+    usuario sin haber pasado antes por la contraseña.
+    """
+    last_created = db.scalar(
+        select(OTPCode.created_at)
+        .where(OTPCode.user_id == user.id)
+        .order_by(OTPCode.created_at.desc())
+        .limit(1)
+    )
+    return last_created is not None and last_created > utcnow() - timedelta(
+        minutes=OTP_EXPIRE_MINUTES
+    )
+
+
 def seconds_until_resend(db: Session, user: User) -> int:
     """
     Indica cuántos segundos faltan para poder pedir otro OTP.

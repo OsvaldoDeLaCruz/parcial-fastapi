@@ -31,6 +31,9 @@ OTP_EXPIRE_MINUTES = min(int(os.getenv("OTP_EXPIRE_MINUTES", "15")), 15)
 # Tiempo mínimo entre dos reenvíos de OTP para el mismo usuario
 OTP_RESEND_COOLDOWN_SECONDS = int(os.getenv("OTP_RESEND_COOLDOWN_SECONDS", "60"))
 
+# Rate limiting (slowapi). Se puede desactivar en los tests con RATE_LIMIT_ENABLED=false
+RATE_LIMIT_ENABLED = _get_bool("RATE_LIMIT_ENABLED", True)
+
 # SMTP
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
