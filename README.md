@@ -4,6 +4,7 @@ API REST de autenticación con **verificación en dos pasos**: después de ingre
 
 Parcial — Desarrollo de Software.
 
+- **Repositorio:** <https://github.com/OsvaldoDeLaCruz/parcial-fastapi>
 - **API desplegada:** `https://<tu-servicio>.onrender.com` _(completar tras el despliegue)_
 - **Documentación interactiva:** `https://<tu-servicio>.onrender.com/docs`
 
@@ -80,8 +81,8 @@ parcial-fastapi-otp/
 
 ```powershell
 # 1. Clonar el repositorio
-git clone https://github.com/<usuario>/parcial-fastapi-otp.git
-cd parcial-fastapi-otp
+git clone https://github.com/OsvaldoDeLaCruz/parcial-fastapi.git
+cd parcial-fastapi
 
 # 2. Crear y activar el entorno virtual
 py -3.12 -m venv venv
@@ -230,7 +231,7 @@ Los tests usan una base de datos temporal y un envío de correo simulado: no toc
 ### 2. Subir el código a GitHub
 
 ```powershell
-git remote add origin https://github.com/<usuario>/parcial-fastapi-otp.git
+git remote add origin https://github.com/OsvaldoDeLaCruz/parcial-fastapi.git
 git push -u origin master
 ```
 
