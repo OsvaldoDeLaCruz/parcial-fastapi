@@ -1,12 +1,22 @@
-fastapi
-uvicorn[standard]
-gunicorn
-sqlalchemy
-pydantic[email]
-pyotp
-bcrypt
-python-jose[cryptography]
-python-dotenv
-slowapi
-pytest
-httpx2
+# Framework y servidor ASGI
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+
+# Base de datos
+sqlalchemy==2.1.3
+
+# Validación (EmailStr necesita email-validator)
+pydantic[email]==2.13.5
+
+# Seguridad: OTP, hash de contraseñas y JWT
+pyotp==2.10.0
+bcrypt==5.0.0
+python-jose[cryptography]==3.5.0
+
+# Configuración (.env) y rate limiting
+python-dotenv==1.2.4
+slowapi==0.1.10
+
+# Tests
+pytest==9.1.1
+httpx2==2.13.1

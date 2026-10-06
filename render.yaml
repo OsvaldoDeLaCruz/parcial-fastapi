@@ -1,0 +1,38 @@
+# Blueprint de Render: describe cómo construir y ejecutar el servicio.
+# En Render: New > Blueprint > seleccionar este repositorio.
+services:
+  - type: web
+    name: parcial-fastapi-otp
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # --proxy-headers: Render pone un proxy delante de la app; así se obtiene la IP
+    # real del cliente (necesaria para que el rate limiting funcione por usuario)
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /
+    envVars:
+      # Confía en los encabezados X-Forwarded-For del proxy de Render (lo lee uvicorn)
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      - key: SECRET_KEY
+        generateValue: true # Render genera una clave aleatoria segura
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: OTP_EXPIRE_MINUTES
+        value: "15"
+      - key: EMAIL_CONSOLE_MODE
+        value: "false"
+      # Render bloquea los puertos SMTP 465/587 en el plan gratuito: se usa Brevo por el 2525
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "2525"
+      # sync: false -> Render pide estos valores al crear el servicio (no se guardan en Git)
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false

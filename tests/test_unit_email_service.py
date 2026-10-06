@@ -40,6 +40,19 @@ def test_send_otp_email_uses_tls_and_login(smtp_config):
     server.send_message.assert_called_once()
 
 
+def test_send_otp_email_port_465_uses_ssl(smtp_config, monkeypatch):
+    """Con el puerto 465 se usa SMTP_SSL (cifrado desde el inicio) en vez de STARTTLS."""
+    monkeypatch.setattr(config, "SMTP_PORT", 465)
+
+    with patch("smtplib.SMTP_SSL") as ssl_cls, patch("smtplib.SMTP") as plain_cls:
+        server = ssl_cls.return_value.__enter__.return_value
+        send_otp_email("ana@gmail.com", "Ana", "482913")
+
+    plain_cls.assert_not_called()
+    server.starttls.assert_not_called()
+    server.send_message.assert_called_once()
+
+
 def test_send_otp_email_raises_on_smtp_error(smtp_config):
     """Si el servidor SMTP falla se lanza EmailSendError (sin exponer detalles)."""
     with patch("smtplib.SMTP", side_effect=smtplib.SMTPAuthenticationError(535, b"bad")):

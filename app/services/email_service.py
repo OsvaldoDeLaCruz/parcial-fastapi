@@ -1,8 +1,10 @@
 """
 Servicio de correo: envía los códigos OTP usando smtplib (librería estándar).
 
-Funciona con cualquier servidor SMTP. Con Gmail se usa smtp.gmail.com:587
-y una "contraseña de aplicación" (no la contraseña normal de la cuenta).
+Funciona con cualquier servidor SMTP:
+- Gmail (desarrollo local): smtp.gmail.com:587 con una "contraseña de aplicación".
+- Brevo (producción en Render): smtp-relay.brevo.com:2525, porque Render
+  bloquea los puertos SMTP 465 y 587 en el plan gratuito.
 """
 
 import logging
@@ -76,8 +78,13 @@ def send_otp_email(to_email: str, full_name: str, code: str) -> None:
     msg = build_otp_message(to_email, full_name, code)
 
     try:
-        with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=10) as server:
-            server.starttls()  # cifra la conexión antes de enviar usuario y contraseña
+        # Puerto 465: conexión cifrada (SSL) desde el inicio.
+        # Puertos 587 / 2525: conexión normal que luego se cifra con STARTTLS.
+        use_ssl = config.SMTP_PORT == 465
+        smtp_class = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+        with smtp_class(config.SMTP_HOST, config.SMTP_PORT, timeout=10) as server:
+            if not use_ssl:
+                server.starttls()  # cifra la conexión antes de enviar usuario y contraseña
             server.login(config.SMTP_USER, config.SMTP_PASSWORD)
             server.send_message(msg)
     except (smtplib.SMTPException, OSError) as exc:
