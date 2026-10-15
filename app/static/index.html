@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acceso seguro con código</title>
+  <style>
+    :root {
+      --bg: #f3f5f9;
+      --card: #ffffff;
+      --text: #1d2433;
+      --muted: #5f6b7d;
+      --border: #d9dee7;
+      --primary: #2f5bea;
+      --primary-hover: #2349c9;
+      --primary-soft: #e8eefe;
+      --ok: #157347;
+      --ok-soft: #e3f4ea;
+      --err: #b42318;
+      --err-soft: #fdecea;
+      --warn-soft: #fff6e0;
+      --warn: #8a5a00;
+      --radius: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11151c;
+        --card: #1a2029;
+        --text: #e8ecf2;
+        --muted: #9aa5b5;
+        --border: #2e3744;
+        --primary: #6d8dff;
+        --primary-hover: #8aa3ff;
+        --primary-soft: #232d45;
+        --ok: #5fd08f;
+        --ok-soft: #173326;
+        --err: #ff8a80;
+        --err-soft: #3a1d1b;
+        --warn-soft: #3a2f14;
+        --warn: #f2c66d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    header p { margin: 0; color: var(--muted); }
+
+    /* Indicador de pasos */
+    .steps { display: flex; gap: 8px; list-style: none; padding: 0; margin: 0 0 20px; flex-wrap: wrap; justify-content: center; }
+    .steps li { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); }
+    .steps li + li::before { content: ""; width: 24px; height: 2px; background: var(--border); margin-right: 2px; }
+    .steps .num {
+      width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+      border: 2px solid var(--border); font-weight: 600; font-size: .85rem;
+    }
+    .steps li.active { color: var(--text); font-weight: 600; }
+    .steps li.active .num { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .steps li.done .num { border-color: var(--ok); background: var(--ok); color: #fff; }
+
+    .card {
+      width: 100%; max-width: 440px; background: var(--card);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 28px; box-shadow: 0 4px 18px rgba(0,0,0,.05);
+    }
+    h2 { font-size: 1.25rem; margin: 0 0 6px; }
+    .hint { color: var(--muted); font-size: .92rem; margin: 0 0 18px; }
+
+    /* Pestañas */
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 22px; }
+    .tabs button {
+      border: 0; background: transparent; color: var(--muted); padding: 9px; border-radius: 8px;
+      font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+    label { display: block; font-weight: 600; font-size: .92rem; margin: 14px 0 6px; }
+    input {
+      width: 100%; padding: 11px 12px; font: inherit; color: var(--text);
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    }
+    input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 76px; }
+    .toggle-pass {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      border: 0; background: none; color: var(--primary); font: inherit; font-size: .85rem; cursor: pointer; padding: 6px;
+    }
+
+    /* Requisitos de contraseña */
+    .rules { list-style: none; padding: 0; margin: 8px 0 0; font-size: .85rem; color: var(--muted); }
+    .rules li::before { content: "○ "; }
+    .rules li.ok { color: var(--ok); }
+    .rules li.ok::before { content: "✓ "; }
+
+    .code-input {
+      text-align: center; font-size: 2rem; letter-spacing: .5em; padding: 12px 0 12px .5em;
+      font-variant-numeric: tabular-nums; font-weight: 600;
+    }
+
+    button.primary, button.secondary, button.danger {
+      width: 100%; margin-top: 20px; padding: 12px; font: inherit; font-weight: 600;
+      border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+    }
+    button.primary { background: var(--primary); color: #fff; }
+    button.primary:hover { background: var(--primary-hover); }
+    button.secondary { background: var(--card); color: var(--text); border-color: var(--border); }
+    button.secondary:hover { background: var(--bg); }
+    button.danger { background: var(--card); color: var(--err); border-color: var(--err); }
+    button:disabled { opacity: .6; cursor: progress; }
+    .link {
+      border: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; padding: 0; text-decoration: underline;
+    }
+    .link:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    .center { text-align: center; margin-top: 16px; font-size: .92rem; color: var(--muted); }
+
+    /* Mensajes */
+    .alert { border-radius: 8px; padding: 10px 12px; font-size: .92rem; margin-bottom: 16px; }
+    .alert ul { margin: 4px 0 0; padding-left: 18px; }
+    .alert.error { background: var(--err-soft); color: var(--err); }
+    .alert.success { background: var(--ok-soft); color: var(--ok); }
+    .alert.info { background: var(--warn-soft); color: var(--warn); }
+
+    /* Perfil */
+    .profile-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .avatar {
+      width: 52px; height: 52px; border-radius: 50%; background: var(--primary-soft); color: var(--primary);
+      display: grid; place-items: center; font-weight: 700; font-size: 1.3rem; flex-shrink: 0;
+    }
+    .profile-head h2 { margin: 0; overflow-wrap: anywhere; }
+    .profile-head p { margin: 0; color: var(--muted); font-size: .92rem; overflow-wrap: anywhere; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: .92rem; }
+    dt { color: var(--muted); }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    .session-box { background: var(--primary-soft); border-radius: 8px; padding: 10px 12px; margin-top: 18px; font-size: .92rem; }
+    details { border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; }
+    summary { padding: 12px 14px; cursor: pointer; font-weight: 600; }
+    details > form { padding: 0 14px 14px; }
+    details > form button.primary { margin-top: 14px; }
+
+    footer { margin-top: 24px; font-size: .85rem; color: var(--muted); text-align: center; }
+    footer a { color: var(--primary); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔐 Acceso seguro</h1>
+    <p>Inicio de sesión con verificación en dos pasos</p>
+  </header>
+
+  <ol class="steps" aria-label="Progreso">
+    <li id="step-1"><span class="num">1</span>Tu cuenta</li>
+    <li id="step-2"><span class="num">2</span>Código</li>
+    <li id="step-3"><span class="num">3</span>Tu perfil</li>
+  </ol>
+
+  <main class="card">
+    <div id="alert" class="alert" role="alert" hidden></div>
+
+    <!-- PASO 1: Iniciar sesión / Crear cuenta -->
+    <section id="view-auth" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tab-login" aria-selected="true">Iniciar sesión</button>
+        <button type="button" role="tab" id="tab-register" aria-selected="false">Crear cuenta</button>
+      </div>
+
+      <form id="form-login" novalidate>
+        <p class="hint">Ingresa tu email y contraseña. Te enviaremos un código a tu correo para confirmar que eres tú.</p>
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="email" placeholder="tu.correo@gmail.com" required>
+        <label for="login-password">Contraseña</label>
+        <div class="pass-wrap">
+          <input id="login-password" type="password" autocomplete="current-password" required>
+          <button type="button" class="toggle-pass" data-target="login-password">Mostrar</button>
+        </div>
+        <button class="primary" type="submit">Continuar</button>
+        <p class="center">¿No tienes cuenta? <button type="button" class="link" data-go-tab="register">Créala aquí</button></p>
+      </form>
+
+      <form id="form-register" novalidate hidden>
+        <p class="hint">Crea tu cuenta en un minuto.</p>
+        <label for="reg-name">Nombre completo</label>
+        <input id="reg-name" type="text" autocomplete="name" placeholder="Ana Pérez" required>
+        <label for="reg-email">Email</label>
+        <input id="reg-email" type="email" autocomplete="email" placeholder="tu.correo@gmail.com" required>
+        <label for="reg-password">Contraseña</label>
+        <div class="pass-wrap">
+          <input id="reg-password" type="password" autocomplete="new-password" required>
+          <button type="button" class="toggle-pass" data-target="reg-password">Mostrar</button>
+        </div>
+        <ul class="rules" id="reg-rules">
+          <li data-rule="length">Al menos 8 caracteres</li>
+          <li data-rule="letter">Al menos una letra</li>
+          <li data-rule="number">Al menos un número</li>
+        </ul>
+        <label for="reg-password2">Repite la contraseña</label>
+        <input id="reg-password2" type="password" autocomplete="new-password" required>
+        <button class="primary" type="submit">Crear cuenta</button>
+        <p class="center">¿Ya tienes cuenta? <button type="button" class="link" data-go-tab="login">Inicia sesión</button></p>
+      </form>
+    </section>
+
+    <!-- PASO 2: Código OTP -->
+    <section id="view-code" hidden>
+      <h2>Revisa tu correo</h2>
+      <p class="hint">Enviamos un código de 6 dígitos a <strong id="code-email"></strong>. Si no lo ves, revisa la carpeta de spam.</p>
+      <form id="form-code" novalidate>
+        <label for="code">Código de verificación</label>
+        <input id="code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" pattern="\d{6}" placeholder="••••••" required>
+        <p class="center" id="code-expiry"></p>
+        <button class="primary" type="submit">Verificar</button>
+      </form>
+      <p class="center">
+        ¿No te llegó? <button type="button" class="link" id="btn-resend">Reenviar código</button>
+      </p>
+      <p class="center"><button type="button" class="link" id="btn-back">Usar otra cuenta</button></p>
+    </section>
+
+    <!-- PASO 3: Perfil -->
+    <section id="view-profile" hidden>
+      <div class="profile-head">
+        <div class="avatar" id="avatar" aria-hidden="true"></div>
+        <div>
+          <h2 id="p-greeting"></h2>
+          <p id="p-email"></p>
+        </div>
+      </div>
+      <dl>
+        <dt>Cuenta creada</dt><dd id="p-created"></dd>
+        <dt>Última actualización</dt><dd id="p-updated"></dd>
+      </dl>
+      <div class="session-box" id="session-info"></div>
+
+      <details>
+        <summary>✏️ Cambiar nombre</summary>
+        <form id="form-name" novalidate>
+          <label for="new-name">Nuevo nombre</label>
+          <input id="new-name" type="text" autocomplete="name" required>
+          <button class="primary" type="submit">Guardar nombre</button>
+        </form>
+      </details>
+
+      <details>
+        <summary>🔑 Cambiar contraseña</summary>
+        <form id="form-password" novalidate>
+          <label for="cur-pass">Contraseña actual</label>
+          <input id="cur-pass" type="password" autocomplete="current-password" required>
+          <label for="new-pass">Nueva contraseña</label>
+          <input id="new-pass" type="password" autocomplete="new-password" required>
+          <ul class="rules" id="new-rules">
+            <li data-rule="length">Al menos 8 caracteres</li>
+            <li data-rule="letter">Al menos una letra</li>
+            <li data-rule="number">Al menos un número</li>
+          </ul>
+          <label for="new-pass2">Repite la nueva contraseña</label>
+          <input id="new-pass2" type="password" autocomplete="new-password" required>
+          <button class="primary" type="submit">Cambiar contraseña</button>
+          <p class="hint" style="margin-top:10px">Por seguridad, se cerrarán tus sesiones en otros dispositivos.</p>
+        </form>
+      </details>
+
+      <div class="row">
+        <button class="secondary" type="button" id="btn-refresh">Renovar sesión</button>
+        <button class="danger" type="button" id="btn-logout">Cerrar sesión</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p id="server-status"></p>
+    <p>¿Eres desarrollador? <a href="/docs">Documentación técnica de la API</a></p>
+  </footer>
+
+  <script>
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Estado guardado en sessionStorage (se borra al cerrar la pestaña)
+    // ---------------------------------------------------------------
+    const store = {
+      get(key) { try { return sessionStorage.getItem(key); } catch { return null; } },
+      set(key, value) { try { sessionStorage.setItem(key, value); } catch {} },
+      remove(...keys) { try { keys.forEach(k => sessionStorage.removeItem(k)); } catch {} },
+    };
+
+    const OTP_MINUTES = 15;
+    const RESEND_SECONDS = 60;
+    const $ = id => document.getElementById(id);
+    let timers = [];
+
+    // ---------------------------------------------------------------
+    // Llamadas a la API
+    // ---------------------------------------------------------------
+    class ApiError extends Error {
+      constructor(status, messages) {
+        super(messages.join(". "));
+        this.status = status;
+        this.messages = messages;
+      }
+    }
+
+    /** Llama a la API y devuelve el JSON; lanza ApiError con mensajes en español si falla. */
+    async function api(path, { method = "GET", body, auth = false } = {}) {
+      const headers = { "Content-Type": "application/json" };
+      if (auth) headers.Authorization = "Bearer " + store.get("token");
+      let res;
+      try {
+        res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      } catch {
+        throw new ApiError(0, ["No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."]);
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const d = data.detail;
+        const messages = Array.isArray(d) ? d.map(e => e.msg) : [d || "Ocurrió un error inesperado"];
+        throw new ApiError(res.status, messages);
+      }
+      return data;
+    }
+
+    // ---------------------------------------------------------------
+    // Interfaz: mensajes, vistas y botones
+    // ---------------------------------------------------------------
+    function showAlert(type, messages) {
+      const box = $("alert");
+      const list = Array.isArray(messages) ? messages : [messages];
+      box.className = "alert " + type;
+      box.replaceChildren();
+      if (list.length === 1) {
+        box.textContent = list[0];
+      } else {
+        const ul = document.createElement("ul");
+        list.forEach(m => { const li = document.createElement("li"); li.textContent = m; ul.append(li); });
+        box.append(ul);
+      }
+      box.hidden = false;
+    }
+    function clearAlert() { $("alert").hidden = true; }
+
+    function showView(name) {
+      timers.forEach(clearInterval);
+      timers = [];
+      ["auth", "code", "profile"].forEach(v => { $("view-" + v).hidden = v !== name; });
+      const step = { auth: 1, code: 2, profile: 3 }[name];
+      [1, 2, 3].forEach(n => {
+        $("step-" + n).className = n === step ? "active" : n < step ? "done" : "";
+      });
+    }
+
+    /** Ejecuta una acción mostrando "Cargando..." en el botón mientras espera. */
+    async function withLoading(button, text, action) {
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = text;
+      const slow = setTimeout(() => { button.textContent = "El servidor está despertando, un momento…"; }, 6000);
+      try {
+        await action();
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401 && store.get("token")) return sessionExpired();
+        showAlert("error", err.messages || [err.message]);
+      } finally {
+        clearTimeout(slow);
+        button.disabled = false;
+        button.textContent = original;
+      }
+    }
+
+    function formatDate(isoUtc) {
+      // La API devuelve fechas en UTC sin zona: se agrega "Z" para convertirlas a la hora local
+      const date = new Date(isoUtc.endsWith("Z") ? isoUtc : isoUtc + "Z");
+      return date.toLocaleString("es", { dateStyle: "long", timeStyle: "short" });
+    }
+
+    function formatRemaining(ms) {
+      const total = Math.max(0, Math.round(ms / 1000));
+      const m = Math.floor(total / 60), s = total % 60;
+      return m + ":" + String(s).padStart(2, "0");
+    }
+
+    function everySecond(fn) { fn(); timers.push(setInterval(fn, 1000)); }
+
+    // Mostrar / ocultar contraseña
+    document.querySelectorAll(".toggle-pass").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = $(btn.dataset.target);
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.textContent = show ? "Ocultar" : "Mostrar";
+      });
+    });
+
+    // Requisitos de contraseña en vivo
+    function passwordRules(value) {
+      return { length: value.length >= 8, letter: /[A-Za-z]/.test(value), number: /\d/.test(value) };
+    }
+    function watchRules(inputId, listId) {
+      $(inputId).addEventListener("input", () => {
+        const rules = passwordRules($(inputId).value);
+        $(listId).querySelectorAll("li").forEach(li => li.classList.toggle("ok", rules[li.dataset.rule]));
+      });
+    }
+    watchRules("reg-password", "reg-rules");
+    watchRules("new-pass", "new-rules");
+
+    // ---------------------------------------------------------------
+    // Paso 1: pestañas, login y registro
+    // ---------------------------------------------------------------
+    function selectTab(name) {
+      $("tab-login").setAttribute("aria-selected", name === "login");
+      $("tab-register").setAttribute("aria-selected", name === "register");
+      $("form-login").hidden = name !== "login";
+      $("form-register").hidden = name !== "register";
+      clearAlert();
+    }
+    $("tab-login").addEventListener("click", () => selectTab("login"));
+    $("tab-register").addEventListener("click", () => selectTab("register"));
+    document.querySelectorAll("[data-go-tab]").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.goTab)));
+
+    $("form-register").addEventListener("submit", e => {
+      e.preventDefault();
+      clearAlert();
+      const name = $("reg-name").value.trim();
+      const email = $("reg-email").value.trim();
+      const password = $("reg-password").value;
+      const problems = [];
+      if (!name) problems.push("Escribe tu nombre");
+      if (!email) problems.push("Escribe tu email");
+      const r = passwordRules(password);
+      if (!r.length || !r.letter || !r.number) problems.push("La contraseña no cumple los requisitos");
+      if (password !== $("reg-password2").value) problems.push("Las contraseñas no coinciden");
+      if (problems.length) return showAlert("error", problems);
+
+      withLoading(e.submitter, "Creando cuenta…", async () => {
+        await api("/auth/register", { method: "POST", body: { email, password, full_name: name } });
+        $("form-register").reset();
+        $("reg-rules").querySelectorAll("li").forEach(li => li.classList.remove("ok"));
+        selectTab("login");
+        $("login-email").value = email;
+        $("login-password").focus();
+        showAlert("success", "¡Cuenta creada! Ahora inicia sesión con tu email y contraseña.");
+      });
+    });
+
+    $("form-login").addEventListener("submit", e => {
+      e.preventDefault();
+      clearAlert();
+      const email = $("login-email").value.trim();
+      const password = $("login-password").value;
+      if (!email || !password) return showAlert("error", "Escribe tu email y tu contraseña");
+
+      withLoading(e.submitter, "Enviando código…", async () => {
+        await api("/auth/login", { method: "POST", body: { email, password } });
+        $("login-password").value = "";
+        store.set("pending_email", email.toLowerCase());
+        store.set("otp_sent_at", String(Date.now()));
+        showCodeView();
+        showAlert("success", "Te enviamos un código a tu correo.");
+      });
+    });
+
+    // ---------------------------------------------------------------
+    // Paso 2: código OTP
+    // ---------------------------------------------------------------
+    function showCodeView() {
+      showView("code");
+      $("code-email").textContent = store.get("pending_email");
+      $("code").value = "";
+      $("code").focus();
+      const sentAt = Number(store.get("otp_sent_at"));
+      everySecond(() => {
+        const left = sentAt + OTP_MINUTES * 60000 - Date.now();
+        $("code-expiry").textContent = left > 0
+          ? "El código vence en " + formatRemaining(left)
+          : "El código venció. Pide uno nuevo.";
+        const wait = sentAt + RESEND_SECONDS * 1000 - Date.now();
+        $("btn-resend").disabled = wait > 0;
+        $("btn-resend").textContent = wait > 0 ? "Reenviar código (" + Math.ceil(wait / 1000) + " s)" : "Reenviar código";
+      });
+    }
+
+    // Solo dígitos; al completar los 6 se envía automáticamente
+    $("code").addEventListener("input", () => {
+      $("code").value = $("code").value.replace(/\D/g, "").slice(0, 6);
+      if ($("code").value.length === 6) $("form-code").requestSubmit();
+    });
+
+    $("form-code").addEventListener("submit", e => {
+      e.preventDefault();
+      clearAlert();
+      const code = $("code").value;
+      if (!/^\d{6}$/.test(code)) return showAlert("error", "El código debe tener exactamente 6 dígitos");
+      const button = $("form-code").querySelector("button");
+
+      withLoading(button, "Verificando…", async () => {
+        try {
+          const data = await api("/auth/verify-otp", { method: "POST", body: { email: store.get("pending_email"), code } });
+          store.set("token", data.access_token);
+          store.set("token_exp", String(Date.now() + data.expires_in * 1000));
+          store.remove("pending_email", "otp_sent_at");
+          await showProfile();
+          showAlert("success", "¡Listo! Iniciaste sesión correctamente.");
+        } catch (err) {
+          $("code").value = "";
+          $("code").focus();
+          throw err;
+        }
+      });
+    });
+
+    $("btn-resend").addEventListener("click", () => {
+      clearAlert();
+      withLoading($("btn-resend"), "Enviando…", async () => {
+        await api("/auth/resend-otp", { method: "POST", body: { email: store.get("pending_email") } });
+        store.set("otp_sent_at", String(Date.now()));
+        showCodeView();
+        showAlert("success", "Te enviamos un código nuevo. El anterior ya no sirve.");
+      });
+    });
+
+    $("btn-back").addEventListener("click", () => {
+      store.remove("pending_email", "otp_sent_at");
+      clearAlert();
+      showView("auth");
+      selectTab("login");
+    });
+
+    // ---------------------------------------------------------------
+    // Paso 3: perfil
+    // ---------------------------------------------------------------
+    function renderProfile(user) {
+      const first = user.full_name.split(" ")[0];
+      $("avatar").textContent = user.full_name.trim().charAt(0).toUpperCase();
+      $("p-greeting").textContent = "Hola, " + first + " 👋";
+      $("p-email").textContent = user.email;
+      $("p-created").textContent = formatDate(user.created_at);
+      $("p-updated").textContent = formatDate(user.updated_at);
+      $("new-name").value = user.full_name;
+    }
+
+    async function showProfile() {
+      const user = await api("/users/profile", { auth: true });
+      showView("profile");
+      renderProfile(user);
+      const exp = Number(store.get("token_exp"));
+      everySecond(() => {
+        const left = exp - Date.now();
+        if (left <= 0) return sessionExpired();
+        $("session-info").textContent = "🕒 Tu sesión vence en " + formatRemaining(left) + ". Usa “Renovar sesión” para extenderla.";
+      });
+    }
+
+    function sessionExpired() {
+      store.remove("token", "token_exp");
+      showView("auth");
+      selectTab("login");
+      showAlert("info", "Tu sesión terminó. Inicia sesión de nuevo.");
+    }
+
+    $("form-name").addEventListener("submit", e => {
+      e.preventDefault();
+      clearAlert();
+      const full_name = $("new-name").value.trim();
+      if (full_name.length < 2) return showAlert("error", "El nombre debe tener al menos 2 caracteres");
+      withLoading(e.submitter, "Guardando…", async () => {
+        const user = await api("/users/profile", { method: "PUT", auth: true, body: { full_name } });
+        renderProfile(user);
+        e.target.closest("details").open = false;
+        showAlert("success", "Nombre actualizado.");
+      });
+    });
+
+    $("form-password").addEventListener("submit", e => {
+      e.preventDefault();
+      clearAlert();
+      const current_password = $("cur-pass").value;
+      const new_password = $("new-pass").value;
+      const problems = [];
+      if (!current_password) problems.push("Escribe tu contraseña actual");
+      const r = passwordRules(new_password);
+      if (!r.length || !r.letter || !r.number) problems.push("La nueva contraseña no cumple los requisitos");
+      if (new_password !== $("new-pass2").value) problems.push("Las contraseñas nuevas no coinciden");
+      if (problems.length) return showAlert("error", problems);
+
+      withLoading(e.submitter, "Guardando…", async () => {
+        try {
+          const user = await api("/users/profile", { method: "PUT", auth: true, body: { current_password, new_password } });
+          renderProfile(user);
+          e.target.reset();
+          $("new-rules").querySelectorAll("li").forEach(li => li.classList.remove("ok"));
+          e.target.closest("details").open = false;
+          showAlert("success", "Contraseña cambiada. Se cerraron tus sesiones en otros dispositivos.");
+        } catch (err) {
+          // 400 = contraseña actual incorrecta: no es una sesión vencida
+          if (err.status === 400) return showAlert("error", err.messages);
+          throw err;
+        }
+      });
+    });
+
+    $("btn-refresh").addEventListener("click", () => {
+      clearAlert();
+      withLoading($("btn-refresh"), "Renovando…", async () => {
+        const data = await api("/auth/refresh", { method: "POST", auth: true });
+        store.set("token", data.access_token);
+        store.set("token_exp", String(Date.now() + data.expires_in * 1000));
+        await showProfile();
+        showAlert("success", "Sesión renovada por " + Math.round(data.expires_in / 60) + " minutos más.");
+      });
+    });
+
+    $("btn-logout").addEventListener("click", () => {
+      clearAlert();
+      withLoading($("btn-logout"), "Cerrando…", async () => {
+        try { await api("/auth/logout", { method: "POST", auth: true }); } catch {}
+        store.remove("token", "token_exp");
+        showView("auth");
+        selectTab("login");
+        showAlert("success", "Cerraste sesión correctamente.");
+      });
+    });
+
+    // ---------------------------------------------------------------
+    // Inicio: decide qué paso mostrar
+    // ---------------------------------------------------------------
+    async function start() {
+      if (store.get("token") && Number(store.get("token_exp")) > Date.now()) {
+        try { await showProfile(); return; } catch { store.remove("token", "token_exp"); }
+      }
+      const sentAt = Number(store.get("otp_sent_at"));
+      if (store.get("pending_email") && Date.now() - sentAt < OTP_MINUTES * 60000) return showCodeView();
+      showView("auth");
+      selectTab("login");
+    }
+
+    // Aviso si el servidor tarda (en el plan gratuito de Render "duerme" tras un rato sin uso)
+    (async () => {
+      const t = setTimeout(() => { $("server-status").textContent = "⏳ El servidor está despertando, puede tardar hasta un minuto…"; }, 2500);
+      try { await fetch("/health"); } catch {}
+      clearTimeout(t);
+      $("server-status").textContent = "";
+    })();
+
+    start();
+  </script>
+</body>
+</html>

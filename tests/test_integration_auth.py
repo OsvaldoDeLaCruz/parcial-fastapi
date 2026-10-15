@@ -196,8 +196,44 @@ def test_rate_limit_blocks_brute_force(client, user, rate_limit_enabled):
     assert statuses[5:] == [429, 429]
 
 
-def test_health_and_docs_are_public(client):
-    """El estado del servicio y la documentación no requieren token."""
-    assert client.get("/").json()["status"] == "ok"
+def test_web_page_health_and_docs_are_public(client):
+    """La página web, el estado del servicio y la documentación no requieren token."""
+    r = client.get("/")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/html")
+    assert '<html lang="es">' in r.text
+
+    assert client.get("/health").json()["status"] == "ok"
     assert client.get("/docs").status_code == 200
     assert client.get("/openapi.json").status_code == 200
+
+
+def test_error_messages_are_in_spanish(client):
+    """Los errores de validación, 404, 405 y 429 se responden en español."""
+    r = client.post("/auth/register", json={"email": "malo", "password": "ab"})
+    assert r.status_code == 422
+    messages = {e["campo"]: e["msg"] for e in r.json()["detail"]}
+    assert messages == {
+        "email": "El email no tiene un formato válido",
+        "password": "La contraseña debe tener al menos 8 caracteres",
+        "full_name": "El nombre es obligatorio",
+    }
+
+    r = client.post("/auth/verify-otp", json={"email": TEST_EMAIL, "code": "12a"})
+    assert r.json()["detail"][0]["msg"] == "El código debe tener exactamente 6 dígitos"
+
+    r = client.post("/auth/register", json={"email": "a@gmail.com", "password": "SoloLetras", "full_name": "Ana"})
+    assert r.json()["detail"][0]["msg"] == "La contraseña debe contener al menos una letra y un número"
+
+    assert client.get("/no-existe").json() == {"detail": "Recurso no encontrado"}
+    assert client.delete("/auth/login").json() == {"detail": "Método no permitido"}
+
+
+def test_rate_limit_message_in_spanish(client, user, rate_limit_enabled):
+    """El mensaje de límite de peticiones también está en español."""
+    for _ in range(5):
+        client.post("/auth/login", json={"email": TEST_EMAIL, "password": "Incorrecta1"})
+    r = client.post("/auth/login", json={"email": TEST_EMAIL, "password": "Incorrecta1"})
+    assert r.status_code == 429
+    assert r.json() == {"detail": "Demasiados intentos. Espere un minuto e intente de nuevo."}
+    assert r.headers["Retry-After"] == "60"

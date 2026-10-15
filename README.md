@@ -6,7 +6,8 @@ Parcial — Desarrollo de Software.
 
 - **Repositorio:** <https://github.com/OsvaldoDeLaCruz/parcial-fastapi>
 - **API desplegada:** <https://parcial-fastapi-otp.onrender.com>
-- **Documentación interactiva:** <https://parcial-fastapi-otp.onrender.com/docs>
+- **Página web (usuarios):** <https://parcial-fastapi-otp.onrender.com>
+- **Documentación técnica de la API:** <https://parcial-fastapi-otp.onrender.com/docs>
 
 ---
 
@@ -46,6 +47,7 @@ Parcial — Desarrollo de Software.
 parcial-fastapi-otp/
 ├── app/
 │   ├── main.py              # Aplicación principal: une middleware, rutas y manejo de errores
+│   ├── errors.py            # Mensajes de error de la API en español
 │   ├── config.py            # Lee las variables de entorno (.env)
 │   ├── database.py          # Conexión a SQLite, sesiones y creación de tablas
 │   ├── models.py            # Modelos SQLAlchemy: users, otp_codes, login_sessions
@@ -53,6 +55,8 @@ parcial-fastapi-otp/
 │   ├── security.py          # bcrypt, creación/validación de JWT y sesiones
 │   ├── middleware.py        # Middleware que valida el token en rutas protegidas
 │   ├── limiter.py           # Configuración del rate limiting
+│   ├── static/
+│   │   └── index.html       # Página web en español (registro, login, código y perfil)
 │   ├── routes/
 │   │   ├── auth.py          # /auth/*: register, login, verify-otp, refresh, logout, resend-otp
 │   │   └── users.py         # /users/profile (GET, PUT)
@@ -136,7 +140,10 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 uvicorn app.main:app --reload
 ```
 
-Abrir **<http://127.0.0.1:8000/docs>** (Swagger UI). Las tablas se crean automáticamente al iniciar.
+- **<http://127.0.0.1:8000/>** — página web en español para usar el sistema paso a paso.
+- **<http://127.0.0.1:8000/docs>** — documentación técnica de la API (Swagger UI).
+
+Las tablas se crean automáticamente al iniciar.
 
 ### Flujo de autenticación
 
@@ -147,7 +154,7 @@ Abrir **<http://127.0.0.1:8000/docs>** (Swagger UI). Las tablas se crean automá
 4. Rutas protegidas con el encabezado  Authorization: Bearer <access_token>
 ```
 
-En `/docs`, después del paso 3, pulsar **Authorize** y pegar el `access_token`.
+En la página web este flujo es guiado (con contador de vencimiento del código y de la sesión). En `/docs`, después del paso 3, pulsar **Authorize** y pegar el `access_token`.
 
 ### Ejemplo con curl
 
@@ -180,7 +187,10 @@ curl http://127.0.0.1:8000/users/profile -H "Authorization: Bearer <token>"
 | GET | `/users/profile` | Ver perfil del usuario | Sí | 200, 401 |
 | PUT | `/users/profile` | Actualizar nombre y/o contraseña | Sí | 200, 400, 401, 422 |
 | POST | `/auth/resend-otp` | Reenviar código OTP | No | 200, 400, 429, 503 |
-| GET | `/` | Estado del servicio | No | 200 |
+| GET | `/` | Página web en español | No | 200 |
+| GET | `/health` | Estado del servicio | No | 200 |
+
+Todos los mensajes de error se devuelven en español (`app/errors.py`).
 
 **Códigos de estado usados:** 200 OK · 201 creado · 400 petición inválida · 401 no autenticado · 409 conflicto (email ya registrado) · 422 datos con formato inválido · 429 demasiadas peticiones · 500 error interno (mensaje genérico) · 503 no se pudo enviar el correo.
 
@@ -203,7 +213,7 @@ curl http://127.0.0.1:8000/users/profile -H "Authorization: Bearer <token>"
 ## Tests
 
 ```powershell
-pytest                    # todos (62 casos)
+pytest                    # todos (64 casos)
 pytest -m unit            # solo unitarios
 pytest -m integration     # solo integración
 ```
@@ -216,7 +226,7 @@ Los tests usan una base de datos temporal y un envío de correo simulado: no toc
 | `test_unit_otp_service.py` | Unitario | 6 dígitos, expiración, un solo uso, invalidación, espera de reenvío |
 | `test_unit_schemas.py` | Unitario | Validación de email, contraseña, OTP y actualización de perfil |
 | `test_unit_email_service.py` | Unitario | Envío SMTP simulado: STARTTLS/SSL, login, errores |
-| `test_integration_auth.py` | Integración | Flujo completo, errores 401/409/422/503, refresh, logout, resend, perfil, rate limiting |
+| `test_integration_auth.py` | Integración | Flujo completo, errores 401/409/422/503, refresh, logout, resend, perfil, rate limiting, mensajes en español, página web |
 
 ## Despliegue en Render
 

@@ -4,22 +4,25 @@ Aplicación principal: crea la app FastAPI y une todas las piezas.
 Ejecutar en desarrollo:
     uvicorn app.main:app --reload
 
-Documentación interactiva: http://127.0.0.1:8000/docs
+Página web para usuarios:       http://127.0.0.1:8000/
+Documentación técnica de la API: http://127.0.0.1:8000/docs
 """
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
+from fastapi.responses import FileResponse, JSONResponse
 
 from app import config
 from app.database import init_db
+from app.errors import register_error_handlers
 from app.limiter import limiter
 from app.middleware import AuthMiddleware
 from app.routes import auth, users
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,18 +47,21 @@ app = FastAPI(
     title="Sistema de Autenticación con OTP",
     description=(
         "API de autenticación con verificación en dos pasos.\n\n"
+        "**¿Buscas la página para usuarios?** Está en [/](/).\n\n"
+        "Cómo probar la API desde aquí:\n\n"
         "1. `POST /auth/register` — crear cuenta.\n"
         "2. `POST /auth/login` — email y contraseña; se envía un código OTP al correo.\n"
         "3. `POST /auth/verify-otp` — código OTP; se recibe el token JWT.\n"
-        "4. Botón **Authorize** — pegar el token para usar las rutas protegidas."
+        "4. Botón **Authorize** — pegar el token para usar las rutas protegidas.\n\n"
+        "En cada endpoint: **Try it out** (probar) → completar los datos → **Execute** (ejecutar)."
     ),
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# Rate limiting (slowapi): responde 429 cuando se supera el límite
+# Rate limiting (slowapi) y mensajes de error en español
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+register_error_handlers(app)
 
 # Middleware que valida el token en las rutas protegidas
 app.add_middleware(AuthMiddleware)
@@ -79,7 +85,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/", tags=["Estado"], summary="Estado del servicio")
+@app.get("/", include_in_schema=False)
+def web_page():
+    """Página web en español para usar el sistema (registro, login, código OTP y perfil)."""
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/health", tags=["Estado"], summary="Estado del servicio")
 def health():
-    """Permite comprobar que el servidor está funcionando (útil en el despliegue)."""
+    """Permite comprobar que el servidor está funcionando (Render lo usa en el despliegue)."""
     return {"status": "ok", "docs": "/docs"}
