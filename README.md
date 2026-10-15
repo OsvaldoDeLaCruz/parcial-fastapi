@@ -5,8 +5,8 @@ API REST de autenticación con **verificación en dos pasos**: después de ingre
 Parcial — Desarrollo de Software.
 
 - **Repositorio:** <https://github.com/OsvaldoDeLaCruz/parcial-fastapi>
-- **API desplegada:** `https://<tu-servicio>.onrender.com` _(completar tras el despliegue)_
-- **Documentación interactiva:** `https://<tu-servicio>.onrender.com/docs`
+- **API desplegada:** <https://parcial-fastapi-otp.onrender.com>
+- **Documentación interactiva:** <https://parcial-fastapi-otp.onrender.com/docs>
 
 ---
 
