@@ -216,8 +216,11 @@ def test_error_messages_are_in_spanish(client):
     assert messages == {
         "email": "El email no tiene un formato válido",
         "password": "La contraseña debe tener al menos 8 caracteres",
-        "full_name": "El nombre es obligatorio",
+        "full_name": "Falta el nombre",
     }
+
+    r = client.post("/auth/login", json={"email": TEST_EMAIL})
+    assert r.json()["detail"][0]["msg"] == "Falta la contraseña"
 
     r = client.post("/auth/verify-otp", json={"email": TEST_EMAIL, "code": "12a"})
     assert r.json()["detail"][0]["msg"] == "El código debe tener exactamente 6 dígitos"

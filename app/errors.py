@@ -46,7 +46,8 @@ def translate_validation_error(error: dict) -> str:
     name = FIELD_NAMES.get(field, f"El campo '{field}'" if field else "Los datos")
 
     if error_type == "missing":
-        return f"{name} es obligatorio"
+        # "Falta el email" / "Falta la contraseña": así concuerda con cualquier campo
+        return f"Falta {name[0].lower()}{name[1:]}"
     if error_type == "string_too_short":
         return f"{name} debe tener al menos {ctx.get('min_length')} caracteres"
     if error_type == "string_too_long":
@@ -65,7 +66,7 @@ def translate_validation_error(error: dict) -> str:
         # Errores propios (ValueError de los validadores de schemas.py): ya están
         # en español, solo se quita el prefijo "Value error, " que agrega Pydantic
         return error.get("msg", "").removeprefix("Value error, ")
-    return f"{name} no es válido"
+    return f"{name} tiene un valor no válido"
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
