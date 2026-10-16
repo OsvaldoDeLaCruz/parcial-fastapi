@@ -66,6 +66,7 @@ def sent_emails(monkeypatch):
     sent = []
 
     def fake_send(to_email, full_name, code):
+        """Simula el envío: guarda destinatario y código en vez de mandar el correo."""
         sent.append({"to": to_email, "code": code})
 
     monkeypatch.setattr("app.routes.auth.send_otp_email", fake_send)

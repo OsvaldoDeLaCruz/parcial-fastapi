@@ -53,6 +53,7 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
+        """Texto para depuración; no incluye el hash de la contraseña."""
         return f"<User id={self.id} email={self.email!r}>"
 
 
@@ -78,7 +79,7 @@ class OTPCode(Base):
         return not self.used and self.expires_at > utcnow()
 
     def __repr__(self) -> str:
-        # No se muestra el código para no exponerlo en logs
+        """Texto para depuración; no muestra el código para no exponerlo en logs."""
         return f"<OTPCode id={self.id} user_id={self.user_id} used={self.used}>"
 
 
@@ -107,4 +108,5 @@ class LoginSession(Base):
         return self.expires_at > utcnow()
 
     def __repr__(self) -> str:
+        """Texto para depuración; no muestra el token."""
         return f"<LoginSession id={self.id} user_id={self.user_id}>"

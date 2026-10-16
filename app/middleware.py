@@ -53,6 +53,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
     """Valida el token JWT y la sesión en todas las rutas protegidas."""
 
     async def dispatch(self, request: Request, call_next):
+        """
+        Se ejecuta en cada petición: deja pasar las rutas públicas y, en las
+        protegidas, responde 401 si el token falta, es inválido o fue revocado.
+        """
         # Las peticiones OPTIONS (CORS) y las rutas públicas pasan sin validar
         if request.method == "OPTIONS" or not is_protected(request.url.path):
             return await call_next(request)

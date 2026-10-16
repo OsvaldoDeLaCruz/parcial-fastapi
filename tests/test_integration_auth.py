@@ -174,6 +174,7 @@ def test_login_returns_503_when_email_fails(client, monkeypatch, user):
     """Si el correo no se puede enviar responde 503 y el OTP generado queda invalidado."""
 
     def failing_send(*args):
+        """Simula un servidor SMTP caído."""
         raise EmailSendError("SMTP caído")
 
     monkeypatch.setattr("app.routes.auth.send_otp_email", failing_send)

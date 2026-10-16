@@ -41,6 +41,7 @@ class EmailNormalizedMixin(BaseModel):
     @field_validator("email", mode="after", check_fields=False)
     @classmethod
     def normalize_email(cls, value: str) -> str:
+        """Quita espacios y pasa el email a minúsculas antes de usarlo."""
         return value.strip().lower()
 
 
@@ -65,11 +66,13 @@ class UserRegister(EmailNormalizedMixin):
     @field_validator("password")
     @classmethod
     def check_password(cls, value: str) -> str:
+        """Exige que la contraseña tenga al menos una letra y un número."""
         return validate_password_strength(value)
 
     @field_validator("full_name")
     @classmethod
     def strip_full_name(cls, value: str) -> str:
+        """Quita espacios al inicio y al final; rechaza nombres que queden con menos de 2 letras."""
         value = value.strip()
         if len(value) < 2:
             raise ValueError("El nombre debe tener al menos 2 caracteres")
@@ -119,6 +122,7 @@ class UserUpdate(BaseModel):
     @field_validator("full_name")
     @classmethod
     def strip_full_name(cls, value: Optional[str]) -> Optional[str]:
+        """Igual que en el registro, pero el nombre es opcional (None = no se cambia)."""
         if value is None:
             return value
         value = value.strip()
@@ -129,6 +133,7 @@ class UserUpdate(BaseModel):
     @field_validator("new_password")
     @classmethod
     def check_new_password(cls, value: Optional[str]) -> Optional[str]:
+        """Si se envía una contraseña nueva, debe cumplir la misma política que en el registro."""
         return value if value is None else validate_password_strength(value)
 
     @model_validator(mode="after")
