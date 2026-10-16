@@ -269,10 +269,12 @@ Configuración aplicada (`render.yaml`):
 
 ## Contribuciones del equipo
 
-| Integrante | Responsabilidad | Archivos |
+| Integrante | Responsabilidad | Archivos / evidencia |
 |---|---|---|
-| Osvaldo De la cruz | | |
-| | | |
-| | | |
+| Osvaldo De la cruz | Desarrollo del backend (modelos, esquemas, seguridad, servicios, middleware, rutas), tests, página web y despliegue en Render | Todos los archivos de `app/` y `tests/`, `render.yaml`, `requirements.txt` (ver `git log`) |
+| Eduardo García | Pruebas del sistema en producción (registro, login, OTP y perfil en Render) | Verificación funcional del despliegue |
+| Juan Ahumada | Pruebas en producción, reporte de errores (envío de correo) y documentación y evidencias de la entrega | Capturas de despliegue y funcionamiento, revisión del README |
 
-Las contribuciones individuales pueden verificarse con `git log --author="<nombre>"`.
+Las contribuciones individuales al código pueden verificarse con `git log --author="<nombre>"`.
+
+El desarrollo se hizo con asistencia de Claude (IA de Anthropic), como consta en la línea `Co-Authored-By` de los commits.
